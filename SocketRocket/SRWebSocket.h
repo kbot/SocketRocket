@@ -250,6 +250,11 @@ extern NSString *const SRHTTPResponseErrorKey;
 - (void)close;
 
 /**
+ Closes a web socket after sending data
+ */
+- (void)closeAfterSending:(id)data;
+
+/**
  Closes a web socket using a given code and reason.
 
  @param code   Code to close the socket with.

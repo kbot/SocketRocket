@@ -499,6 +499,26 @@ NSString *const SRHTTPResponseErrorKey = @"HTTPResponseStatusCode";
     [self closeWithCode:SRStatusCodeNormal reason:nil];
 }
 
+- (void)closeAfterSending:(id)data {
+    //_sentClose = YES;
+    NSAssert(self.readyState != SR_CONNECTING, @"Invalid State: Cannot call send: until connection is open");
+    // TODO: maybe not copy this for performance
+    data = [data copy];
+    dispatch_async(_workQueue, ^{
+        if ([data isKindOfClass:[NSString class]]) {
+            [self _sendFrameWithOpcode:SROpCodeTextFrame data:[(NSString *)data dataUsingEncoding:NSUTF8StringEncoding]];
+        } else if ([data isKindOfClass:[NSData class]]) {
+            [self _sendFrameWithOpcode:SROpCodeBinaryFrame data:data];
+        } else if (data == nil) {
+            [self _sendFrameWithOpcode:SROpCodeTextFrame data:data];
+        } else {
+            assert(NO);
+        }
+        [self close];
+    });
+}
+
+
 - (void)closeWithCode:(NSInteger)code reason:(NSString *)reason;
 {
     assert(code);
@@ -542,6 +562,10 @@ NSString *const SRHTTPResponseErrorKey = @"HTTPResponseStatusCode";
 
 
         [self _sendFrameWithOpcode:SROpCodeConnectionClose data:payload];
+        
+        
+        _closeWhenFinishedWriting = YES;
+
     });
 }
 
